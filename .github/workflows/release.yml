@@ -1,0 +1,44 @@
+name: Release
+
+on:
+  push:
+    branches:
+      - '[0-9]+.[0-9]+'
+      - '[0-9]+.[0-9]+.[0-9]+'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Load Java version
+        run: |
+          JAVA_VERSION=$(cat gradle.properties | grep -oP '(?<=pluginJavaVersion=).+')
+          echo $JAVA_VERSION > .java-version
+
+      - name: Set up JDK
+        uses: actions/setup-java@v3
+        with:
+          distribution: 'temurin'
+          java-version-file: .java-version
+          cache: 'gradle'
+
+      - name: Set up Gradle
+        uses: gradle/gradle-build-action@v2
+
+      - name: Generate versions
+        uses: HardNorth/github-version-generate@v1.3.0
+        with:
+          version-source: file
+          version-file: gradle.properties
+          version-file-extraction-pattern: '(?<=version=).+'
+
+      - name: Release with Gradle
+        id: release
+        run: |
+          ./gradlew release -Prelease.useAutomaticVersion=true \
+          -Prelease.releaseVersion=${{ env.RELEASE_VERSION }} \
+          -Prelease.newVersion=${{ env.NEXT_VERSION }}

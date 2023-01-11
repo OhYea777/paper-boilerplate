@@ -47,3 +47,5 @@ out/
 run/
 
 !gradle/wrapper/gradle-wrapper.jar
+
+.java-version
